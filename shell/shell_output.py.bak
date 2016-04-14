@@ -1,9 +1,3 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import map
-from builtins import str
-from builtins import object
 #!/usr/bin/env python
 # Copyright 2012 Cloudera Inc.
 #
@@ -22,7 +16,7 @@ from builtins import object
 import csv
 import re
 import sys
-from io import StringIO
+from cStringIO import StringIO
 
 
 class PrettyOutputFormatter(object):
@@ -33,16 +27,16 @@ class PrettyOutputFormatter(object):
     # Clear rows that already exist in the table.
     self.prettytable.clear_rows()
     try:
-      list(map(self.prettytable.add_row, rows))
+      map(self.prettytable.add_row, rows)
       return self.prettytable.get_string()
-    except Exception as e:
+    except Exception, e:
       # beeswax returns each row as a tab separated string. If a string column
       # value in a row has tabs, it will break the row split. Default to displaying
       # raw results. This will change with a move to hiveserver2.
       # Reference:  https://issues.cloudera.org/browse/IMPALA-116
       error_msg = ("Prettytable cannot resolve string columns values that have "
                    " embedded tabs. Reverting to tab delimited text output")
-      print(error_msg, file=sys.stderr)
+      print >>sys.stderr, error_msg
       return '\n'.join(['\t'.join(row) for row in rows])
 
 
@@ -53,7 +47,7 @@ class DelimitedOutputFormatter(object):
       if len(self.field_delim) != 1:
         error_msg = ("Illegal delimiter %s, the delimiter "
                      "must be a 1-character string." % self.field_delim)
-        raise ValueError(error_msg)
+        raise ValueError, error_msg
 
   def format(self, rows):
     # csv.writer expects a file handle to the input.
@@ -80,12 +74,12 @@ class OutputStream(object):
     if self.filename:
       try:
         self.handle = open(self.filename, 'ab')
-      except IOError as err:
-        print("Error opening file %s: %s" % (self.filename, str(err)), file=sys.stderr)
-        print("Writing to stdout", file=sys.stderr)
+      except IOError, err:
+        print >>sys.stderr, "Error opening file %s: %s" % (self.filename, str(err))
+        print >>sys.stderr, "Writing to stdout"
 
   def write(self, data):
-    print(self.formatter.format(data), file=self.handle)
+    print >>self.handle, self.formatter.format(data)
     self.handle.flush()
 
   def __del__(self):
